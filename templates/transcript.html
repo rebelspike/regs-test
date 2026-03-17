@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Transcript – {{ student.first_name }} {{ student.last_name }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>📄 Academic Transcript</h1>
+  <a href="javascript:history.back()" class="btn btn-secondary">← Back</a>
+</div>
+
+<div class="card">
+  <div class="transcript-meta">
+    <div>
+      <div class="meta-label">Student Name</div>
+      <div class="meta-value">{{ student.last_name }}, {{ student.first_name }}</div>
+    </div>
+    <div>
+      <div class="meta-label">University ID</div>
+      <div class="meta-value">{{ student.uid }}</div>
+    </div>
+    <div>
+      <div class="meta-label">Program</div>
+      <div class="meta-value">{{ student.program }}</div>
+    </div>
+    <div>
+      <div class="meta-label">Email</div>
+      <div class="meta-value" style="font-size:1rem;">{{ student.email or '—' }}</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Course</th><th>Title</th><th>Cr</th><th>Semester</th>
+        <th>Year</th><th>Instructor</th><th>Grade</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for e in enrollments %}
+      <tr>
+        <td><strong>{{ e.dept }} {{ e.course_number }}</strong></td>
+        <td>{{ e.title }}</td>
+        <td>{{ e.credits }}</td>
+        <td>{{ e.semester }}</td>
+        <td>{{ e.year }}</td>
+        <td>{{ e.instructor_name or '—' }}</td>
+        <td>
+          {% if e.grade == 'IP' %}
+            <span class="badge badge-ip">IP</span>
+          {% elif e.grade == 'F' %}
+            <span class="badge badge-fail">{{ e.grade }}</span>
+          {% else %}
+            <span class="badge badge-pass">{{ e.grade }}</span>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    {% if not enrollments %}
+      <tr><td colspan="7" class="text-center text-muted" style="padding:1.5rem;">No records found.</td></tr>
+    {% endif %}
+    </tbody>
+  </table>
+
+  <div class="flex-gap mt-2">
+    <div>
+      <div class="text-small text-muted">Total Credit Hours Completed</div>
+      <div style="font-size:1.1rem; font-weight:700;">{{ total_credits }}</div>
+    </div>
+    {% if gpa is not none %}
+    <div>
+      <div class="text-small text-muted">Cumulative GPA</div>
+      <div class="gpa-box">{{ gpa }}</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

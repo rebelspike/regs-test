@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Faculty Dashboard – REGS{% endblock %}
+{% block content %}
+<h1>📋 My Courses</h1>
+<div class="card">
+  {% if courses %}
+  <table>
+    <thead>
+      <tr><th>Course</th><th>Title</th><th>Day</th><th>Time</th><th>Action</th></tr>
+    </thead>
+    <tbody>
+    {% for c in courses %}
+      <tr>
+        <td><strong>{{ c.dept }} {{ c.course_number }}</strong></td>
+        <td>{{ c.title }}</td>
+        <td>{{ c.day }}</td>
+        <td>{{ c.time_slot }}</td>
+        <td><a href="{{ url_for('faculty_grades', schedule_id=c.id) }}" class="btn btn-primary btn-sm">Enter Grades</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p class="text-muted">No courses assigned. Contact the admin.</p>
+  {% endif %}
+</div>
+{% endblock %}

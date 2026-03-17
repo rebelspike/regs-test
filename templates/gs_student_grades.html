@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Edit Grades – REGS{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>✏️ Grades: {{ student.first_name }} {{ student.last_name }} ({{ student.uid }})</h1>
+  <a href="{{ url_for('gs_dashboard') }}" class="btn btn-secondary">← Back</a>
+</div>
+<div class="card">
+  {% if enrollments %}
+  <table>
+    <thead>
+      <tr><th>Course</th><th>Title</th><th>Semester</th><th>Year</th><th>Grade</th><th>Update</th></tr>
+    </thead>
+    <tbody>
+    {% for e in enrollments %}
+      <tr>
+        <td><strong>{{ e.dept }} {{ e.course_number }}</strong></td>
+        <td>{{ e.title }}</td>
+        <td>{{ e.semester }}</td>
+        <td>{{ e.year }}</td>
+        <td>
+          {% if e.grade == 'IP' %}
+            <span class="badge badge-ip">IP</span>
+          {% elif e.grade == 'F' %}
+            <span class="badge badge-fail">{{ e.grade }}</span>
+          {% else %}
+            <span class="badge badge-pass">{{ e.grade }}</span>
+          {% endif %}
+        </td>
+        <td>
+          <form method="POST" class="flex-gap">
+            <input type="hidden" name="enrollment_id" value="{{ e.id }}">
+            <select name="grade" style="width:auto; padding:.3rem .5rem; font-size:0.85rem;">
+              {% for g in ['IP','A','A-','B+','B','B-','C+','C','F'] %}
+                <option value="{{ g }}" {% if e.grade == g %}selected{% endif %}>{{ g }}</option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary btn-sm">Save</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p class="text-muted">No enrollments for this student.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Register for Courses – REGS{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>📚 Course Registration</h1>
+  <a href="{{ url_for('student_dashboard') }}" class="btn btn-secondary">← Back</a>
+</div>
+
+<div class="card">
+  <h2>Select a Course</h2>
+  <form method="POST">
+    <div class="grid-2 mb-2">
+      <div class="form-group">
+        <label>Semester</label>
+        <select name="semester" required>
+          <option value="Fall">Fall</option>
+          <option value="Spring">Spring</option>
+          <option value="Summer">Summer</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Year</label>
+        <input type="number" name="year" value="2025" min="2020" max="2030" required>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Select</th><th>Course</th><th>Title</th><th>Cr</th>
+          <th>Day</th><th>Time</th><th>Instructor</th><th>Prerequisites</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for c in courses %}
+        <tr>
+          <td><input type="radio" name="schedule_id" value="{{ c.id }}" required></td>
+          <td><strong>{{ c.dept }} {{ c.course_number }}</strong></td>
+          <td>{{ c.title }}</td>
+          <td>{{ c.credits }}</td>
+          <td>{{ c.day }}</td>
+          <td>{{ c.time_slot }}</td>
+          <td>{{ c.instructor_name or '—' }}</td>
+          <td class="text-small text-muted">
+            {{ c.prereq1 or '' }}{% if c.prereq1 and c.prereq2 %}, {% endif %}{{ c.prereq2 or '' }}
+            {% if not c.prereq1 and not c.prereq2 %}None{% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <div class="mt-2">
+      <button type="submit" class="btn btn-primary">Enroll in Selected Course</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

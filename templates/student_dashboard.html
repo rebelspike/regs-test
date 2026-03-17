@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Student Dashboard – REGS{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>👋 Hello, {{ student.first_name }}!</h1>
+  <span class="text-muted text-small">UID: {{ student.uid }} &nbsp;|&nbsp; Program: {{ student.program }}</span>
+</div>
+
+<div class="grid-3 mb-2">
+  <a href="{{ url_for('student_register_course') }}" class="card quick-card">
+    <div class="icon">📚</div>
+    <div class="label">Register / Drop</div>
+    <div class="hint">Add or drop courses</div>
+  </a>
+  <a href="{{ url_for('student_transcript') }}" class="card quick-card">
+    <div class="icon">📄</div>
+    <div class="label">Transcript</div>
+    <div class="hint">View grades &amp; GPA</div>
+  </a>
+  <a href="{{ url_for('student_profile') }}" class="card quick-card">
+    <div class="icon">✏️</div>
+    <div class="label">Edit Profile</div>
+    <div class="hint">Update address &amp; email</div>
+  </a>
+</div>
+
+<div class="card">
+  <h2>Current &amp; Past Enrollments</h2>
+  {% if enrollments %}
+  <table>
+    <thead>
+      <tr>
+        <th>Course</th><th>Title</th><th>Cr</th><th>Semester</th>
+        <th>Day/Time</th><th>Instructor</th><th>Grade</th><th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for e in enrollments %}
+      <tr>
+        <td><strong>{{ e.dept }} {{ e.course_number }}</strong></td>
+        <td>{{ e.title }}</td>
+        <td>{{ e.credits }}</td>
+        <td>{{ e.semester }} {{ e.year }}</td>
+        <td>{{ e.day }} {{ e.time_slot }}</td>
+        <td>{{ e.instructor_name or '—' }}</td>
+        <td>
+          {% if e.grade == 'IP' %}
+            <span class="badge badge-ip">In Progress</span>
+          {% elif e.grade == 'F' %}
+            <span class="badge badge-fail">{{ e.grade }}</span>
+          {% else %}
+            <span class="badge badge-pass">{{ e.grade }}</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if e.grade == 'IP' %}
+            <form method="POST" action="{{ url_for('drop_course', enrollment_id=e.id) }}"
+                  onsubmit="return confirm('Drop {{ e.dept }} {{ e.course_number }}?')">
+              <button type="submit" class="btn btn-danger btn-sm">Drop</button>
+            </form>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p class="text-muted">No enrollments yet. <a href="{{ url_for('student_register_course') }}">Register for a course</a>.</p>
+  {% endif %}
+</div>
+{% endblock %}

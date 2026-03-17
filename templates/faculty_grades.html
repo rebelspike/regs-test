@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Enter Grades – REGS{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>📝 {{ course.dept }} {{ course.course_number }} – {{ course.title }}</h1>
+  <a href="{{ url_for('faculty_dashboard') }}" class="btn btn-secondary">← Back</a>
+</div>
+<div class="card">
+  <p class="text-small text-muted mb-2">
+    ⚠️ Once a grade is submitted, only the Grad Secretary can change it.
+  </p>
+  {% if enrollments %}
+  <table>
+    <thead>
+      <tr><th>UID</th><th>Name</th><th>Semester</th><th>Current Grade</th><th>Submit Grade</th></tr>
+    </thead>
+    <tbody>
+    {% for e in enrollments %}
+      <tr>
+        <td>{{ e.uid }}</td>
+        <td>{{ e.last_name }}, {{ e.first_name }}</td>
+        <td>{{ e.semester }} {{ e.year }}</td>
+        <td>
+          {% if e.grade == 'IP' %}
+            <span class="badge badge-ip">In Progress</span>
+          {% elif e.grade == 'F' %}
+            <span class="badge badge-fail">{{ e.grade }}</span>
+          {% else %}
+            <span class="badge badge-pass">{{ e.grade }}</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if e.grade == 'IP' %}
+          <form method="POST" class="flex-gap">
+            <input type="hidden" name="enrollment_id" value="{{ e.id }}">
+            <select name="grade" required style="width:auto; padding:.3rem .5rem; font-size:0.85rem;">
+              <option value="">— Select —</option>
+              {% for g in ['A','A-','B+','B','B-','C+','C','F'] %}
+                <option value="{{ g }}">{{ g }}</option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary btn-sm">Submit</button>
+          </form>
+          {% else %}
+            <span class="text-muted text-small">Locked</span>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p class="text-muted">No students enrolled in this course.</p>
+  {% endif %}
+</div>
+{% endblock %}

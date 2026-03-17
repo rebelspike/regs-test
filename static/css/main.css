@@ -1,0 +1,271 @@
+/* ============================================================
+   REGS – Course Registration System
+   main.css
+   ============================================================ */
+
+/* Reset & Base */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f0f2f5;
+    color: #222;
+    min-height: 100vh;
+}
+
+/* ── Navigation ─────────────────────────────────────────── */
+nav {
+    background: linear-gradient(135deg, #003366 0%, #0057a8 100%);
+    color: #fff;
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+nav .brand {
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+nav .brand span {
+    color: #ffd700;
+}
+
+nav .nav-links a {
+    color: #dde6f0;
+    text-decoration: none;
+    margin-left: 1.4rem;
+    font-size: 0.92rem;
+    transition: color 0.2s;
+}
+
+nav .nav-links a:hover {
+    color: #ffd700;
+}
+
+nav .nav-user {
+    color: #aac4e8;
+    font-size: 0.85rem;
+}
+
+/* ── Layout ──────────────────────────────────────────────── */
+.container {
+    max-width: 1100px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.4rem;
+}
+
+/* ── Card ────────────────────────────────────────────────── */
+.card {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.09);
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+/* ── Typography ──────────────────────────────────────────── */
+h1 {
+    font-size: 1.6rem;
+    color: #003366;
+    margin-bottom: 1.2rem;
+}
+
+h2 {
+    font-size: 1.2rem;
+    color: #003366;
+    margin-bottom: 1rem;
+}
+
+/* ── Table ───────────────────────────────────────────────── */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.93rem;
+}
+
+th {
+    background: #003366;
+    color: #fff;
+    padding: 0.6rem 0.9rem;
+    text-align: left;
+}
+
+td {
+    padding: 0.55rem 0.9rem;
+    border-bottom: 1px solid #e8eaf0;
+}
+
+tr:hover td {
+    background: #f5f7ff;
+}
+
+/* ── Badges ──────────────────────────────────────────────── */
+.badge {
+    display: inline-block;
+    padding: 0.18rem 0.7rem;
+    border-radius: 99px;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.badge-ip   { background: #e3ecff; color: #1a56db; }
+.badge-pass { background: #d1fae5; color: #065f46; }
+.badge-fail { background: #fee2e2; color: #991b1b; }
+
+/* ── Role Tags ───────────────────────────────────────────── */
+.role-tag {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.15rem 0.55rem;
+    border-radius: 99px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.role-admin   { background: #fef3c7; color: #92400e; }
+.role-gs      { background: #ede9fe; color: #5b21b6; }
+.role-faculty { background: #dbeafe; color: #1e40af; }
+.role-student { background: #d1fae5; color: #065f46; }
+
+/* ── Buttons ─────────────────────────────────────────────── */
+.btn {
+    display: inline-block;
+    padding: 0.5rem 1.2rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.15s;
+}
+
+.btn-primary            { background: #0057a8; color: #fff; }
+.btn-primary:hover      { background: #003f82; }
+
+.btn-danger             { background: #dc2626; color: #fff; }
+.btn-danger:hover       { background: #991b1b; }
+
+.btn-secondary          { background: #e5e7eb; color: #374151; }
+.btn-secondary:hover    { background: #d1d5db; }
+
+.btn-sm { padding: 0.28rem 0.7rem; font-size: 0.8rem; }
+
+/* ── Alerts ──────────────────────────────────────────────── */
+.alert {
+    padding: 0.8rem 1.2rem;
+    border-radius: 7px;
+    margin-bottom: 1rem;
+    font-size: 0.93rem;
+}
+
+.alert-error   { background: #fee2e2; color: #991b1b; border-left: 4px solid #dc2626; }
+.alert-success { background: #d1fae5; color: #065f46; border-left: 4px solid #10b981; }
+
+/* ── Forms ───────────────────────────────────────────────── */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+label {
+    display: block;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.3rem;
+}
+
+input[type=text],
+input[type=password],
+input[type=email],
+input[type=number],
+select {
+    width: 100%;
+    padding: 0.5rem 0.8rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.93rem;
+    transition: border 0.2s;
+}
+
+input:focus,
+select:focus {
+    outline: none;
+    border-color: #0057a8;
+}
+
+/* ── GPA Box ─────────────────────────────────────────────── */
+.gpa-box {
+    display: inline-block;
+    background: #003366;
+    color: #ffd700;
+    padding: 0.5rem 1.5rem;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-top: 0.5rem;
+}
+
+/* ── Divider ─────────────────────────────────────────────── */
+hr.divider {
+    border: none;
+    border-top: 1px solid #e5e7eb;
+    margin: 1.5rem 0;
+}
+
+/* ── Utility ─────────────────────────────────────────────── */
+.text-muted  { color: #6b7280; }
+.text-small  { font-size: 0.82rem; }
+.text-center { text-align: center; }
+.mt-1  { margin-top: 0.5rem; }
+.mt-2  { margin-top: 1rem; }
+.mt-3  { margin-top: 1.5rem; }
+.mb-1  { margin-bottom: 0.5rem; }
+.mb-2  { margin-bottom: 1rem; }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+.flex-gap     { display: flex; gap: 0.5rem; align-items: center; }
+
+/* ── Dashboard Quick-Link Cards ──────────────────────────── */
+.quick-card {
+    text-decoration: none;
+    text-align: center;
+    padding: 1.2rem;
+}
+
+.quick-card .icon   { font-size: 1.8rem; }
+.quick-card .label  { font-weight: 700; color: #003366; margin-top: 0.3rem; }
+.quick-card .hint   { font-size: 0.82rem; color: #6b7280; }
+
+/* ── Login page ──────────────────────────────────────────── */
+.login-wrap  { max-width: 420px; margin: 3rem auto; }
+.login-icon  { font-size: 2.2rem; }
+.login-title { margin-bottom: 0.2rem; }
+.login-sub   { color: #6b7280; font-size: 0.9rem; }
+
+.demo-creds       { font-size: 0.78rem; color: #9ca3af; line-height: 1.8; }
+.demo-creds strong { color: #6b7280; }
+
+/* ── Transcript summary row ──────────────────────────────── */
+.transcript-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+.meta-label      { font-size: 0.82rem; color: #6b7280; text-transform: uppercase; letter-spacing: .5px; }
+.meta-value      { font-size: 1.1rem; font-weight: 700; }

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard – REGS{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>⚙️ System Administration</h1>
+  <a href="{{ url_for('admin_create_user') }}" class="btn btn-primary">+ Create User</a>
+</div>
+<div class="card">
+  <h2>All Users</h2>
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Username</th><th>Display Name</th><th>Role</th></tr>
+    </thead>
+    <tbody>
+    {% for u in users %}
+      <tr>
+        <td>{{ u.id }}</td>
+        <td><code>{{ u.username }}</code></td>
+        <td>{{ u.display_name }}</td>
+        <td><span class="role-tag role-{{ u.role }}">{{ u.role }}</span></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Grad Secretary – REGS{% endblock %}
+{% block content %}
+<h1>🗂️ All Graduate Students</h1>
+<div class="card">
+  {% if students %}
+  <table>
+    <thead>
+      <tr><th>UID</th><th>Name</th><th>Program</th><th>Email</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+    {% for s in students %}
+      <tr>
+        <td>{{ s.uid }}</td>
+        <td><strong>{{ s.last_name }}, {{ s.first_name }}</strong></td>
+        <td><span class="badge {% if s.program == 'PhD' %}badge-ip{% else %}badge-pass{% endif %}">{{ s.program }}</span></td>
+        <td>{{ s.email or '—' }}</td>
+        <td class="flex-gap">
+          <a href="{{ url_for('gs_transcript', student_id=s.id) }}" class="btn btn-secondary btn-sm">Transcript</a>
+          <a href="{{ url_for('gs_student_grades', student_id=s.id) }}" class="btn btn-primary btn-sm">Edit Grades</a>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p class="text-muted">No students found.</p>
+  {% endif %}
+</div>
+{% endblock %}
