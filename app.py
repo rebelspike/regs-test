@@ -41,7 +41,7 @@ def init_db():
         
         db.executescript(schema_sql)
         db.close()
-        print(f"✅ Database initialized from {schema_file}")
+        print(f"Database initialized from {schema_file}")
 
 @app.teardown_appcontext
 def teardown_db(e=None):
@@ -235,7 +235,7 @@ def student_register_course():
         return redirect(url_for('student_dashboard'))
 
     # Available courses
-    courses = db.execute('''
+    courses_raw = db.execute('''
         SELECT cs.id, cs.course_id, cs.day, cs.time_slot, cs.faculty_id,
                c.dept, c.course_number, c.title, c.credits,
                u.display_name as instructor_name
@@ -244,6 +244,29 @@ def student_register_course():
         LEFT JOIN users u ON cs.faculty_id = u.id
         ORDER BY c.dept, c.course_number
     ''').fetchall()
+    
+    # Fetch prerequisites for each course
+    courses = []
+    for course in courses_raw:
+        prereqs = db.execute('''
+            SELECT c.dept, c.course_number
+            FROM course_prerequisites cp
+            JOIN courses c ON cp.prereq_course_id = c.id
+            WHERE cp.course_id = ?
+            ORDER BY c.dept, c.course_number
+        ''', (course['course_id'],)).fetchall()
+        
+        # Format prerequisites as "CSCI 6212, CSCI 6461" or "None"
+        if prereqs:
+            prereq_str = ', '.join([f"{p['dept']} {p['course_number']}" for p in prereqs])
+        else:
+            prereq_str = 'None'
+        
+        # Convert Row to dict and add prerequisites
+        course_dict = dict(course)
+        course_dict['prerequisites'] = prereq_str
+        courses.append(course_dict)
+    
     return render_template('register_course.html', courses=courses)
 
 @app.route('/student/drop/<int:enrollment_id>', methods=['POST'])

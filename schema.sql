@@ -23,10 +23,10 @@ CREATE TABLE users (
 -- admin/admin123, gs/gs123, faculty123, student123
 INSERT INTO users (id, username, password, role, display_name) VALUES
 (1, 'admin', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', 'admin', 'System Administrator'),
-(2, 'gs', '1c6850b08dce59f74367e0c25fd9ce602c3e0b9e14d8be37b0e3c22f9a7aa48d', 'gs', 'Graduate Secretary'),
-(3, 'prof_smith', '3a622515eae9f61c5258e8d5e429c68f2c825c6f9e5d80ed6b0d2c2b6f6e6f8b', 'faculty', 'Dr. Smith'),
-(4, 'prof_jones', '3a622515eae9f61c5258e8d5e429c68f2c825c6f9e5d80ed6b0d2c2b6f6e6f8b', 'faculty', 'Dr. Jones'),
-(5, 'student1', '0a041b9462caa4a31bac3567e0b6e6fd9100787db2ab433d96f6d178cabfce90', 'student', 'Alice Johnson');
+(2, 'gs', '2b0889c14e6485fe6d97cfde6ef42fd2555bf71f4919f69f17d3a37952cb23ad', 'gs', 'Graduate Secretary'),
+(3, 'prof_smith', '27041f5856c7387a997252694afb048d1aa939228ffcdbd6285b979b8da20e7a', 'faculty', 'Dr. Smith'),
+(4, 'prof_jones', '27041f5856c7387a997252694afb048d1aa939228ffcdbd6285b979b8da20e7a', 'faculty', 'Dr. Jones'),
+(5, 'student1', '703b0a3d6ad75b649a28adde7d83c6251da457549263bc7ff45ec709b0a8448b', 'student', 'Alice Johnson');
 
 CREATE TABLE students (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

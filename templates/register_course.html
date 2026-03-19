@@ -41,10 +41,7 @@
           <td>{{ c.day }}</td>
           <td>{{ c.time_slot }}</td>
           <td>{{ c.instructor_name or '—' }}</td>
-          <td class="text-small text-muted">
-            {{ c.prereq1 or '' }}{% if c.prereq1 and c.prereq2 %}, {% endif %}{{ c.prereq2 or '' }}
-            {% if not c.prereq1 and not c.prereq2 %}None{% endif %}
-          </td>
+          <td class="text-small text-muted">{{ c.prerequisites }}</td>
         </tr>
       {% endfor %}
       </tbody>
