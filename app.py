@@ -1,9 +1,47 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
-from database import init_db, get_db, close_db
+from flask import Flask, render_template, request, redirect, url_for, session, flash, g
+import sqlite3
 import hashlib
+import os
 
 app = Flask(__name__)
 app.secret_key = 'regs_secret_key_2024'
+
+# ─── DATABASE FUNCTIONS ──────────────────────────────────────────────────────
+
+DATABASE = 'regs.db'
+
+def get_db():
+    """Get database connection from Flask's application context."""
+    if 'db' not in g:
+        g.db = sqlite3.connect(DATABASE)
+        g.db.row_factory = sqlite3.Row
+        g.db.execute("PRAGMA foreign_keys = ON")
+    return g.db
+
+def close_db(e=None):
+    """Close database connection."""
+    db = g.pop('db', None)
+    if db is not None:
+        db.close()
+
+def init_db():
+    """Initialize database from schema.sql file."""
+    schema_file = 'schema.sql'
+    if not os.path.exists(schema_file):
+        raise FileNotFoundError(f"Schema file '{schema_file}' not found. Please ensure schema.sql exists in the project directory.")
+    
+    with app.app_context():
+        db = sqlite3.connect(DATABASE)
+        db.row_factory = sqlite3.Row
+        db.execute("PRAGMA foreign_keys = ON")
+        
+        # Read and execute the SQL schema file
+        with open(schema_file, 'r', encoding='utf-8') as f:
+            schema_sql = f.read()
+        
+        db.executescript(schema_sql)
+        db.close()
+        print(f"✅ Database initialized from {schema_file}")
 
 @app.teardown_appcontext
 def teardown_db(e=None):
@@ -99,11 +137,12 @@ def student_dashboard():
     db = get_db()
     student = db.execute('SELECT * FROM students WHERE user_id=?', (session['user_id'],)).fetchone()
     enrollments = db.execute('''
-        SELECT e.id, cs.dept, cs.course_number, cs.title, cs.credits,
+        SELECT e.id, c.dept, c.course_number, c.title, c.credits,
                cs.day, cs.time_slot, e.semester, e.year, e.grade,
                u.display_name as instructor_name
         FROM enrollments e
         JOIN course_schedule cs ON e.schedule_id = cs.id
+        JOIN courses c ON cs.course_id = c.id
         LEFT JOIN users u ON cs.faculty_id = u.id
         WHERE e.student_id = ?
         ORDER BY e.year DESC, e.semester DESC
@@ -138,28 +177,25 @@ def student_register_course():
             flash('You are already enrolled in this course for this semester.', 'error')
             return redirect(url_for('student_register_course'))
 
-        # Check prerequisites
-        prereq1 = course['prereq1']
-        prereq2 = course['prereq2']
-        if prereq1:
+        # Check prerequisites (using normalized course_prerequisites table)
+        prereqs = db.execute('''
+            SELECT c.id as prereq_id, c.dept, c.course_number, c.title
+            FROM course_prerequisites cp
+            JOIN courses c ON cp.prereq_course_id = c.id
+            WHERE cp.course_id = ?
+        ''', (course['course_id'],)).fetchall()
+        
+        for prereq in prereqs:
+            # Check if student has passed this prerequisite
             passed = db.execute('''
                 SELECT e.id FROM enrollments e
                 JOIN course_schedule cs ON e.schedule_id = cs.id
-                JOIN courses c ON cs.course_id = c.id
-                WHERE e.student_id=? AND c.dept||c.course_number = ? AND e.grade NOT IN ('IP','F','')
-            ''', (student['id'], prereq1.replace(' ',''))).fetchone()
+                WHERE e.student_id=? AND cs.course_id=? AND e.grade NOT IN ('IP','F','')
+            ''', (student['id'], prereq['prereq_id'])).fetchone()
+            
             if not passed:
-                flash(f'Prerequisite not met: {prereq1}', 'error')
-                return redirect(url_for('student_register_course'))
-        if prereq2:
-            passed = db.execute('''
-                SELECT e.id FROM enrollments e
-                JOIN course_schedule cs ON e.schedule_id = cs.id
-                JOIN courses c ON cs.course_id = c.id
-                WHERE e.student_id=? AND c.dept||c.course_number = ? AND e.grade NOT IN ('IP','F','')
-            ''', (student['id'], prereq2.replace(' ',''))).fetchone()
-            if not passed:
-                flash(f'Prerequisite not met: {prereq2}', 'error')
+                prereq_name = f"{prereq['dept']} {prereq['course_number']}"
+                flash(f'Prerequisite not met: {prereq_name}', 'error')
                 return redirect(url_for('student_register_course'))
 
         # Schedule conflict check
@@ -200,8 +236,9 @@ def student_register_course():
 
     # Available courses
     courses = db.execute('''
-        SELECT cs.*, c.dept, c.course_number, c.title, c.credits,
-               c.prereq1, c.prereq2, u.display_name as instructor_name
+        SELECT cs.id, cs.course_id, cs.day, cs.time_slot, cs.faculty_id,
+               c.dept, c.course_number, c.title, c.credits,
+               u.display_name as instructor_name
         FROM course_schedule cs
         JOIN courses c ON cs.course_id = c.id
         LEFT JOIN users u ON cs.faculty_id = u.id
@@ -256,8 +293,9 @@ def faculty_dashboard():
         return redirect(url_for('login'))
     db = get_db()
     courses = db.execute('''
-        SELECT cs.id, cs.dept, cs.course_number, cs.title, cs.day, cs.time_slot
+        SELECT cs.id, c.dept, c.course_number, c.title, cs.day, cs.time_slot
         FROM course_schedule cs
+        JOIN courses c ON cs.course_id = c.id
         WHERE cs.faculty_id=?
     ''', (session['user_id'],)).fetchall()
     return render_template('faculty_dashboard.html', courses=courses)
@@ -267,8 +305,12 @@ def faculty_grades(schedule_id):
     if session.get('role') != 'faculty':
         return redirect(url_for('login'))
     db = get_db()
-    course = db.execute('SELECT * FROM course_schedule WHERE id=? AND faculty_id=?',
-                        (schedule_id, session['user_id'])).fetchone()
+    course = db.execute('''
+        SELECT cs.*, c.dept, c.course_number, c.title
+        FROM course_schedule cs
+        JOIN courses c ON cs.course_id = c.id
+        WHERE cs.id=? AND cs.faculty_id=?
+    ''', (schedule_id, session['user_id'])).fetchone()
     if not course:
         flash('Access denied.', 'error')
         return redirect(url_for('faculty_dashboard'))
@@ -365,9 +407,10 @@ def gs_student_grades(student_id):
             flash('Grade updated.', 'success')
         return redirect(url_for('gs_student_grades', student_id=student_id))
     enrollments = db.execute('''
-        SELECT e.id, cs.dept, cs.course_number, cs.title, e.semester, e.year, e.grade
+        SELECT e.id, c.dept, c.course_number, c.title, e.semester, e.year, e.grade
         FROM enrollments e
         JOIN course_schedule cs ON e.schedule_id = cs.id
+        JOIN courses c ON cs.course_id = c.id
         WHERE e.student_id=?
         ORDER BY e.year DESC
     ''', (student_id,)).fetchall()
@@ -418,7 +461,13 @@ def admin_assign_faculty():
         db.commit()
         flash('Faculty assigned.', 'success')
         return redirect(url_for('admin_assign_faculty'))
-    courses = db.execute('SELECT * FROM course_schedule ORDER BY dept, course_number').fetchall()
+    courses = db.execute('''
+        SELECT cs.id, cs.course_id, cs.faculty_id, cs.day, cs.time_slot,
+               c.dept, c.course_number, c.title
+        FROM course_schedule cs
+        JOIN courses c ON cs.course_id = c.id
+        ORDER BY c.dept, c.course_number
+    ''').fetchall()
     faculty = db.execute("SELECT * FROM users WHERE role='faculty' ORDER BY display_name").fetchall()
     return render_template('admin_assign_faculty.html', courses=courses, faculty=faculty)
 
@@ -428,11 +477,12 @@ def _get_transcript(student_id):
     db = get_db()
     student = db.execute('SELECT * FROM students WHERE id=?', (student_id,)).fetchone()
     enrollments = db.execute('''
-        SELECT cs.dept, cs.course_number, cs.title, cs.credits,
+        SELECT c.dept, c.course_number, c.title, c.credits,
                e.semester, e.year, e.grade, cs.day, cs.time_slot,
                u.display_name as instructor_name
         FROM enrollments e
         JOIN course_schedule cs ON e.schedule_id = cs.id
+        JOIN courses c ON cs.course_id = c.id
         LEFT JOIN users u ON cs.faculty_id = u.id
         WHERE e.student_id=?
         ORDER BY e.year DESC, e.semester DESC
