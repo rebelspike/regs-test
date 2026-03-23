@@ -138,14 +138,14 @@ def student_dashboard():
     student = db.execute('SELECT * FROM students WHERE user_id=?', (session['user_id'],)).fetchone()
     enrollments = db.execute('''
         SELECT e.id, c.dept, c.course_number, c.title, c.credits,
-               cs.day, cs.time_slot, e.semester, e.year, e.grade,
+               cs.day, cs.time_slot, cs.semester, cs.year, e.grade,
                u.display_name as instructor_name
         FROM enrollments e
         JOIN course_schedule cs ON e.schedule_id = cs.id
         JOIN courses c ON cs.course_id = c.id
         LEFT JOIN users u ON cs.faculty_id = u.id
         WHERE e.student_id = ?
-        ORDER BY e.year DESC, e.semester DESC
+        ORDER BY cs.year DESC, cs.semester DESC
     ''', (student['id'],)).fetchall()
     return render_template('student_dashboard.html', student=student, enrollments=enrollments)
 
@@ -158,8 +158,6 @@ def student_register_course():
 
     if request.method == 'POST':
         schedule_id = int(request.form['schedule_id'])
-        semester = request.form['semester'].strip()
-        year = int(request.form['year'])
 
         course = db.execute('SELECT * FROM course_schedule WHERE id=?', (schedule_id,)).fetchone()
 
@@ -168,10 +166,10 @@ def student_register_course():
             flash('PhD students can only register for 6000-level courses.', 'error')
             return redirect(url_for('student_register_course'))
 
-        # Already enrolled?
+        # Already enrolled? (semester/year now live on the schedule row)
         already = db.execute(
-            'SELECT id FROM enrollments WHERE student_id=? AND schedule_id=? AND semester=? AND year=?',
-            (student['id'], schedule_id, semester, year)
+            'SELECT id FROM enrollments WHERE student_id=? AND schedule_id=?',
+            (student['id'], schedule_id)
         ).fetchone()
         if already:
             flash('You are already enrolled in this course for this semester.', 'error')
@@ -198,12 +196,12 @@ def student_register_course():
                 flash(f'Prerequisite not met: {prereq_name}', 'error')
                 return redirect(url_for('student_register_course'))
 
-        # Schedule conflict check
+        # Schedule conflict check — semester/year come from the schedule row
         existing_enrollments = db.execute('''
             SELECT cs.day, cs.time_slot FROM enrollments e
             JOIN course_schedule cs ON e.schedule_id = cs.id
-            WHERE e.student_id=? AND e.semester=? AND e.year=? AND e.grade='IP'
-        ''', (student['id'], semester, year)).fetchall()
+            WHERE e.student_id=? AND cs.semester=? AND cs.year=? AND e.grade='IP'
+        ''', (student['id'], course['semester'], course['year'])).fetchall()
 
         new_day = course['day']
         new_time = course['time_slot']
@@ -213,22 +211,17 @@ def student_register_course():
         for en in existing_enrollments:
             if en['day'] == new_day:
                 existing_t = time_order.get(en['time_slot'], -1)
-                # Conflict if same slot or overlapping (not 30min apart)
                 if existing_t == new_t:
                     flash('Schedule conflict: same day and time.', 'error')
                     return redirect(url_for('student_register_course'))
-                # 1500-1730 and 1800-2030: 30 min gap = ok
-                # 1500-1730 and 1600-1830: overlap = conflict
-                # 1530-1800 and 1800-2030: exactly 30 min = allowed
                 combos_conflict = {(0,1),(1,0),(0,2),(2,0),(1,2),(2,1),(1,3),(3,1),(2,3),(3,2)}
-                # Only allow (0,3) and (3,0) - 30 min gap between 1730 and 1800
                 if (existing_t, new_t) in combos_conflict:
                     flash('Schedule conflict detected.', 'error')
                     return redirect(url_for('student_register_course'))
 
         db.execute(
-            'INSERT INTO enrollments (student_id, schedule_id, semester, year, grade) VALUES (?,?,?,?,?)',
-            (student['id'], schedule_id, semester, year, 'IP')
+            'INSERT INTO enrollments (student_id, schedule_id, grade) VALUES (?,?,?)',
+            (student['id'], schedule_id, 'IP')
         )
         db.commit()
         flash('Successfully enrolled!', 'success')
@@ -237,6 +230,7 @@ def student_register_course():
     # Available courses
     courses_raw = db.execute('''
         SELECT cs.id, cs.course_id, cs.day, cs.time_slot, cs.faculty_id,
+               cs.semester, cs.year,
                c.dept, c.course_number, c.title, c.credits,
                u.display_name as instructor_name
         FROM course_schedule cs
@@ -256,13 +250,8 @@ def student_register_course():
             ORDER BY c.dept, c.course_number
         ''', (course['course_id'],)).fetchall()
         
-        # Format prerequisites as "CSCI 6212, CSCI 6461" or "None"
-        if prereqs:
-            prereq_str = ', '.join([f"{p['dept']} {p['course_number']}" for p in prereqs])
-        else:
-            prereq_str = 'None'
+        prereq_str = ', '.join([f"{p['dept']} {p['course_number']}" for p in prereqs]) if prereqs else 'None'
         
-        # Convert Row to dict and add prerequisites
         course_dict = dict(course)
         course_dict['prerequisites'] = prereq_str
         courses.append(course_dict)
@@ -316,7 +305,8 @@ def faculty_dashboard():
         return redirect(url_for('login'))
     db = get_db()
     courses = db.execute('''
-        SELECT cs.id, c.dept, c.course_number, c.title, cs.day, cs.time_slot
+        SELECT cs.id, c.dept, c.course_number, c.title, cs.day, cs.time_slot,
+               cs.semester, cs.year
         FROM course_schedule cs
         JOIN courses c ON cs.course_id = c.id
         WHERE cs.faculty_id=?
@@ -355,9 +345,11 @@ def faculty_grades(schedule_id):
         return redirect(url_for('faculty_grades', schedule_id=schedule_id))
 
     enrollments = db.execute('''
-        SELECT e.id, s.uid, s.first_name, s.last_name, e.semester, e.year, e.grade
+        SELECT e.id, s.uid, s.first_name, s.last_name,
+               cs.semester, cs.year, e.grade
         FROM enrollments e
         JOIN students s ON e.student_id = s.id
+        JOIN course_schedule cs ON e.schedule_id = cs.id
         WHERE e.schedule_id=?
         ORDER BY s.last_name
     ''', (schedule_id,)).fetchall()
@@ -430,12 +422,13 @@ def gs_student_grades(student_id):
             flash('Grade updated.', 'success')
         return redirect(url_for('gs_student_grades', student_id=student_id))
     enrollments = db.execute('''
-        SELECT e.id, c.dept, c.course_number, c.title, e.semester, e.year, e.grade
+        SELECT e.id, c.dept, c.course_number, c.title,
+               cs.semester, cs.year, e.grade
         FROM enrollments e
         JOIN course_schedule cs ON e.schedule_id = cs.id
         JOIN courses c ON cs.course_id = c.id
         WHERE e.student_id=?
-        ORDER BY e.year DESC
+        ORDER BY cs.year DESC, cs.semester DESC
     ''', (student_id,)).fetchall()
     return render_template('gs_student_grades.html', student=student, enrollments=enrollments)
 
@@ -486,6 +479,7 @@ def admin_assign_faculty():
         return redirect(url_for('admin_assign_faculty'))
     courses = db.execute('''
         SELECT cs.id, cs.course_id, cs.faculty_id, cs.day, cs.time_slot,
+               cs.semester, cs.year,
                c.dept, c.course_number, c.title
         FROM course_schedule cs
         JOIN courses c ON cs.course_id = c.id
@@ -501,14 +495,14 @@ def _get_transcript(student_id):
     student = db.execute('SELECT * FROM students WHERE id=?', (student_id,)).fetchone()
     enrollments = db.execute('''
         SELECT c.dept, c.course_number, c.title, c.credits,
-               e.semester, e.year, e.grade, cs.day, cs.time_slot,
+               cs.semester, cs.year, e.grade, cs.day, cs.time_slot,
                u.display_name as instructor_name
         FROM enrollments e
         JOIN course_schedule cs ON e.schedule_id = cs.id
         JOIN courses c ON cs.course_id = c.id
         LEFT JOIN users u ON cs.faculty_id = u.id
         WHERE e.student_id=?
-        ORDER BY e.year DESC, e.semester DESC
+        ORDER BY cs.year DESC, cs.semester DESC
     ''', (student_id,)).fetchall()
 
     grade_points = {'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7,
